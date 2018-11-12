@@ -17,6 +17,8 @@ spring:
                     - type: native
                       search-locations: file:./central-config
                 prefix: /config
+                awsps:
+                    enabled: false
             fail-fast: true
             # name of the config server's property source (file.yml) that we want to use
             name: jhipster-registry

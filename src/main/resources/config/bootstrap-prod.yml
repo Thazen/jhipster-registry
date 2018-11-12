@@ -14,6 +14,9 @@ spring:
                     - type: git
                       uri: https://github.com/jhipster/jhipster-registry-sample-config
                 prefix: /config
+                awsps:
+                    enabled: true
+                    prefix: /amscot
             fail-fast: true
             # name of the config server's property source (file.yml) that we want to use
             name: jhipster-registry

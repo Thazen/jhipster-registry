@@ -80,7 +80,7 @@
         <sonar.sources>${project.basedir}/src/main/</sonar.sources>
         <sonar.surefire.reportsPath>${project.testresult.directory}/surefire-reports</sonar.surefire.reportsPath>
         <sonar.tests>${project.basedir}/src/test/</sonar.tests>
-
+        
         <!-- jhipster-needle-maven-property -->
     </properties>
 
@@ -98,6 +98,14 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ssm</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.github.jhipster</groupId>
             <artifactId>jhipster-framework</artifactId>
@@ -420,24 +428,24 @@
                             </configuration>
                         </execution>
                         <execution>
-                        <id>docker-resources</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>target/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>src/main/docker/</directory>
-                                    <filtering>false</filtering>
-                                    <excludes>
-                                        <exclude>**/*.yml</exclude>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
+                            <id>docker-resources</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/docker/</directory>
+                                        <filtering>false</filtering>
+                                        <excludes>
+                                            <exclude>**/*.yml</exclude>
+                                        </excludes>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -897,18 +905,18 @@
         </profile>
         <profile>
             <id>m2e</id><!--This profile is activated when eclipse interacts with maven (using m2e).-->
-                <activation>
-                    <property>
-                        <name>m2e.version</name>
-                    </property>
-                </activation>
-                <build>
-                    <plugins>
-                        <plugin>
-                            <!--eclipse do not support duplicated package-info.java, in both src and test.-->
-                            <artifactId>maven-compiler-plugin</artifactId>
-                            <executions>
-                                <execution>
+            <activation>
+                <property>
+                    <name>m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!--eclipse do not support duplicated package-info.java, in both src and test.-->
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <executions>
+                            <execution>
                                 <id>default-testCompile</id>
                                 <phase>test-compile</phase>
                                 <configuration>
@@ -919,11 +927,11 @@
                                 <goals>
                                     <goal>testCompile</goal>
                                 </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </build>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

@@ -5,6 +5,7 @@ import io.github.jhipster.registry.config.ConfigServerConfig;
 import io.github.jhipster.registry.config.DefaultProfileUtil;
 
 import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.registry.ssm.AWSParameterStoreEnvironmentSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,7 @@ public class JHipsterRegistryApp {
      */
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(JHipsterRegistryApp.class);
+        app.addListeners(new AWSParameterStoreEnvironmentSupport());
         DefaultProfileUtil.addDefaultProfile(app);
         Environment env = app.run(args).getEnvironment();
         String protocol = "http";
