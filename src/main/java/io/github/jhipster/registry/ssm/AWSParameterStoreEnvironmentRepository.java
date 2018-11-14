@@ -63,7 +63,7 @@ public class AWSParameterStoreEnvironmentRepository implements EnvironmentReposi
      */
     @Override
     public int getOrder() {
-        return 1;
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
 }

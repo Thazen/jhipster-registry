@@ -11,7 +11,7 @@ spring:
         include: composite
     cloud:
         config:
-            server:
+            server:  
                 bootstrap: true
                 composite:
                     - type: native
