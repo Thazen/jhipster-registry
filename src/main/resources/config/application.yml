@@ -32,6 +32,9 @@ server:
     port: 8761
 
 logging:
+    pattern:
+        console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} [%method]: %msg%n"
+        file: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} [%method]: %msg%n"
     file: target/jhipster-registry.log
 
 ribbon:
