@@ -1,10 +1,10 @@
 import { Route } from '@angular/router';
-import { JhiHistoryComponent } from './history.component';
+import { HistoryComponent } from './history.component';
 
 export const historyRoute: Route = {
-    path: 'history',
-    component: JhiHistoryComponent,
-    data: {
-        pageTitle: 'History'
-    }
+  path: '',
+  component: HistoryComponent,
+  data: {
+    pageTitle: 'History'
+  }
 };

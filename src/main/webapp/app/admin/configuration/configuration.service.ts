@@ -1,94 +1,87 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs/Observable';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { Route } from 'app/shared';
+import { SERVER_API_URL } from 'app/app.constants';
+import { Route } from 'app/shared/routes/route.model';
 
-@Injectable()
-export class JhiConfigurationService {
-    constructor(private http: HttpClient) {}
+export interface ConfigProps {
+  contexts: Contexts;
+}
 
-    getConfigs(prefix: String = ''): Observable<any> {
-        return this.http.get(prefix + 'management/configprops', { observe: 'response' }).map((res: HttpResponse<any>) => {
-            const properties: any[] = [];
-            const propertiesObject = this.getConfigPropertiesObjects(res.body);
-            for (const key in propertiesObject) {
-                if (propertiesObject.hasOwnProperty(key)) {
-                    properties.push(propertiesObject[key]);
-                }
-            }
+export interface Contexts {
+  [key: string]: Context;
+}
 
-            return properties.sort((propertyA, propertyB) => {
-                return propertyA.prefix === propertyB.prefix ? 0 : propertyA.prefix < propertyB.prefix ? -1 : 1;
-            });
-        });
+export interface Context {
+  beans: Beans;
+  parentId?: any;
+}
+
+export interface Beans {
+  [key: string]: Bean;
+}
+
+export interface Bean {
+  prefix: string;
+  properties: any;
+}
+
+export interface Env {
+  activeProfiles?: string[];
+  propertySources: PropertySource[];
+}
+
+export interface PropertySource {
+  name: string;
+  properties: Properties;
+}
+
+export interface Properties {
+  [key: string]: Property;
+}
+
+export interface Property {
+  value: string;
+  origin?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ConfigurationService {
+  constructor(private http: HttpClient) {}
+
+  getBeans(prefix: String = ''): Observable<Bean[]> {
+    return this.http.get<ConfigProps>((SERVER_API_URL as string) + prefix + 'management/configprops').pipe(
+      map(configProps =>
+        Object.values(
+          Object.values(configProps.contexts)
+            .map(context => context.beans)
+            .reduce((allBeans: Beans, contextBeans: Beans) => ({ ...allBeans, ...contextBeans }))
+        )
+      )
+    );
+  }
+
+  getInstanceBeans(instance: Route | undefined): Observable<Bean[]> {
+    if (instance && instance.prefix && instance.prefix.length > 0) {
+      return this.getBeans(instance.prefix + '/');
     }
+    return this.getBeans();
+  }
 
-    getConfigPropertiesObjects(res: Object) {
-        // This code is for Spring Boot 2
-        if (res['contexts'] !== undefined) {
-            for (const key in res['contexts']) {
-                // If the key is not bootstrap, it will be the ApplicationContext Id
-                // For default app, it is applicationName
-                // For microservice, it is applicationName-1
-                if (!key.startsWith('bootstrap')) {
-                    return res['contexts'][key]['beans'];
-                }
-            }
-        }
-        // Otherwise, return res.json(), which is for Spring Boot 1
-        return res;
+  getPropertySources(prefix: String = ''): Observable<PropertySource[]> {
+    return this.http.get<Env>((SERVER_API_URL as string) + prefix + 'management/env').pipe(
+      map(env => {
+        return env.propertySources;
+      })
+    );
+  }
+
+  getInstancePropertySources(instance: Route | undefined): Observable<PropertySource[]> {
+    if (instance && instance.prefix && instance.prefix.length > 0) {
+      return this.getPropertySources(instance.prefix + '/');
     }
-
-    getInstanceConfigs(instance: Route): Observable<any> {
-        if (instance && instance.prefix && instance.prefix.length > 0) {
-            return this.getConfigs(instance.prefix + '/');
-        }
-        return this.getConfigs();
-    }
-
-    getEnv(prefix: String = ''): Observable<any> {
-        return this.http.get(prefix + 'management/env', { observe: 'response' }).map((res: HttpResponse<any>) => {
-            const properties: any = {};
-            const propertiesObject = res.body;
-
-            if (propertiesObject['propertySources'] !== undefined) {
-                // This is for Spring Boot 2
-                const propertySources = propertiesObject['propertySources'];
-                for (const propertyObject of propertySources) {
-                    const name = propertyObject['name'];
-                    const detailProperties = propertyObject['properties'];
-                    const vals: any[] = [];
-                    for (const keyDetail in detailProperties) {
-                        if (detailProperties.hasOwnProperty(keyDetail)) {
-                            vals.push({ key: keyDetail, val: detailProperties[keyDetail]['value'] });
-                        }
-                    }
-                    properties[name] = vals;
-                }
-            } else {
-                // This is for Spring Boot 1
-                for (const key in propertiesObject) {
-                    if (propertiesObject.hasOwnProperty(key)) {
-                        const valsObject = propertiesObject[key];
-                        const vals: any[] = [];
-                        for (const valKey in valsObject) {
-                            if (valsObject.hasOwnProperty(valKey)) {
-                                vals.push({ key: valKey, val: valsObject[valKey] });
-                            }
-                        }
-                        properties[key] = vals;
-                    }
-                }
-            }
-            return properties;
-        });
-    }
-
-    getInstanceEnv(instance: Route): Observable<any> {
-        if (instance && instance.prefix && instance.prefix.length > 0) {
-            return this.getEnv(instance.prefix + '/');
-        }
-        return this.getEnv();
-    }
+    return this.getPropertySources();
+  }
 }

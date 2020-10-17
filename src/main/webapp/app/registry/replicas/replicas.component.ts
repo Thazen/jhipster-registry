@@ -1,35 +1,36 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { JhiReplicasService } from './replicas.service';
-import { JhiRefreshService } from 'app/shared/refresh/refresh.service';
-import { Subscription } from 'rxjs/Subscription';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { ReplicasService } from './replicas.service';
+import { RefreshService } from 'app/shared/refresh/refresh.service';
 
 @Component({
-    selector: 'jhi-replicas',
-    templateUrl: './replicas.component.html',
-    styleUrls: ['replicas.component.scss']
+  selector: 'jhi-replicas',
+  templateUrl: './replicas.component.html',
+  styleUrls: ['replicas.component.scss']
 })
-export class JhiReplicasComponent implements OnInit, OnDestroy {
-    showMore: boolean;
-    replicas: any;
+export class ReplicasComponent implements OnInit, OnDestroy {
+  showMore = true;
+  replicas?: Array<string>;
+  unsubscribe$ = new Subject();
 
-    refreshReloadSubscription: Subscription;
+  constructor(private replicasService: ReplicasService, private refreshService: RefreshService) {}
 
-    constructor(private replicasService: JhiReplicasService, private refreshService: JhiRefreshService) {
-        this.showMore = true;
-    }
+  ngOnInit(): void {
+    this.refreshService.refreshReload$.pipe(takeUntil(this.unsubscribe$)).subscribe(() => this.refresh());
+    this.refresh();
+  }
 
-    ngOnInit() {
-        this.refreshReloadSubscription = this.refreshService.refreshReload$.subscribe((empty) => this.refresh());
-        this.refresh();
-    }
+  refresh(): void {
+    this.replicasService
+      .findAll()
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(replicas => (this.replicas = replicas));
+  }
 
-    ngOnDestroy() {
-        this.refreshReloadSubscription.unsubscribe();
-    }
-
-    refresh() {
-        this.replicasService.findAll().subscribe((replicas) => {
-            this.replicas = replicas;
-        });
-    }
+  ngOnDestroy(): void {
+    // prevent memory leak when component destroyed
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
 }

@@ -1,6 +1,6 @@
 {
   "generator-jhipster": {
-    "jhipsterVersion": "4.13.3",
+    "jhipsterVersion": "6.8.0",
     "baseName": "JHipsterRegistry",
     "packageName": "io.github.jhipster.registry",
     "packageFolder": "io/github/jhipster/registry",
@@ -25,9 +25,27 @@
     "jhiPrefix": "jhi",
     "skipClient": false,
     "skipUserManagement": false,
-    "clientPackageManager": "yarn",
+    "clientPackageManager": "npm",
     "clientFramework": "angularX",
     "cacheProvider": "no",
-    "enableHibernateCache": false
+    "enableHibernateCache": false,
+    "embeddableLaunchScript": false,
+    "clientTheme": "none",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "blueprints": [],
+    "creationTimestamp": 1576848019661,
+    "gcpProjectId": "jhipsterproject",
+    "gcpCloudSqlInstanceName": "jhipsterproject:us-central1:jhipster",
+    "gcpCloudSqlUserName": "root",
+    "gcpCloudSqlDatabaseName": "jhipsterregistry",
+    "gaeServiceName": "jhipster-registry",
+    "gaeLocation": "us-central",
+    "gaeInstanceClass": "F2",
+    "gaeScalingType": "automatic",
+    "gaeMinInstances": "1",
+    "gaeMaxInstances": "2",
+    "gaeCloudSQLInstanceNeeded": "Y"
   }
 }

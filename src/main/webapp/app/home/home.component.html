@@ -13,8 +13,8 @@
     </div>
     <div class="row" *ngSwitchCase="true">
         <div class="col-sm-12 col-md-6" *ngIf="status">
-            <div class="card card-outline-primary">
-                <div class="card-header card-primary">
+            <div class="card">
+                <div class="card-header text-white bg-primary">
                     <h3 class="card-title">System Status</h3>
                 </div>
                 <div class="card-block">
@@ -46,8 +46,8 @@
             </div>
         </div>
         <div class="col-sm-12 col-md-6" *ngIf="appInstances">
-            <div class="card card-outline-primary">
-                <div class="card-header card-primary">
+            <div class="card">
+                <div class="card-header text-white bg-primary">
                     <h3 class="card-title">Instances Registered</h3>
                 </div>
                 <div class="card-block">
@@ -61,12 +61,12 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr *ngFor="let app of appInstances">
-                            <td>{{app.name}}</td>
-                            <td class="break">{{app.instanceId}}</td>
+                        <tr *ngFor="let instance of appInstances">
+                            <td>{{instance.name}}</td>
+                            <td class="break">{{instance.instanceId}}</td>
                             <td class="text-center">
-                            <span class="badge badge-pill font-weight-normal" [ngClass]="getBadgeClass(app.status)">
-                                {{app.status}}
+                            <span class="badge badge-pill font-weight-normal" [ngClass]="getBadgeClass(instance.status)">
+                                {{instance.status}}
                             </span>
                             </td>
                         </tr>
@@ -78,8 +78,8 @@
     </div>
     <div class="row" *ngSwitchCase="true">
         <div class="col-sm-12 col-md-6" *ngIf="status">
-            <div class="card card-outline-primary">
-                <div class="card-header card-primary">
+            <div class="card">
+                <div class="card-header text-white bg-primary">
                     <h3 class="card-title">General Info</h3>
                 </div>
                 <div class="card-block">
@@ -114,20 +114,21 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-12 col-md-6" *ngIf="healthData">
-            <div class="card card-outline-primary">
-                <div class="card-header card-primary">
+        <div class="col-sm-12 col-md-6" *ngIf="health">
+            <div class="card">
+                <div class="card-header text-white bg-primary">
                     <h3 class="card-title">Health</h3>
                 </div>
                 <div class="card-block">
                     <table id="healthCheck" class="table">
                         <tbody>
-                        <tr *ngFor="let health of healthData">
-                            <td><span class="text-capitalize">{{baseName(health.name)}}</span> {{subSystemName(health.name)}}</td>
+                        <tr *ngFor="let componentHealth of health.components | keys">
+                            <td><span class="text-capitalize">{{ componentHealth.key }}</span></td>
                             <td class="text-center">
-                            <span class="badge badge-pill font-weight-normal" [ngClass]="getBadgeClass(health.status)">
-                                {{health.status}}
-                            </span>
+                            <td class="text-center">
+                                <span class="badge" [ngClass]="getBadgeClass(componentHealth.value.status)">
+                                    {{ componentHealth.value.status }}
+                                </span>
                             </td>
                         </tr>
                         </tbody>

@@ -1,72 +1,74 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs/Subscription';
-
-import { Log } from './log.model';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { Level, Log, Logger, LoggersResponse } from './log.model';
 import { LogsService } from './logs.service';
-
-import { JhiRoutesService, Route } from 'app/shared';
+import { Route } from 'app/shared/routes/route.model';
+import { RoutesService } from 'app/shared/routes/routes.service';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
-    selector: 'jhi-logs',
-    templateUrl: './logs.component.html'
+  selector: 'jhi-logs',
+  templateUrl: './logs.component.html'
 })
 export class LogsComponent implements OnInit, OnDestroy {
-    loggers: Log[];
-    updatingLogs: boolean;
-    filter: string;
-    orderProp: string;
-    reverse: boolean;
+  loggers?: Log[];
+  filter = '';
+  orderProp = 'name';
+  reverse = false;
 
-    activeRoute: Route;
-    subscription: Subscription;
+  activeRoute?: Route;
+  routes?: Route[];
+  unsubscribe$ = new Subject();
 
-    constructor(private logsService: LogsService, private routesService: JhiRoutesService) {
-        this.filter = '';
-        this.orderProp = 'name';
-        this.reverse = false;
+  constructor(private logsService: LogsService, private routesService: RoutesService) {}
+
+  ngOnInit(): void {
+    this.loggers = [];
+    this.routesService.routeChanged$.pipe(takeUntil(this.unsubscribe$)).subscribe(route => {
+      this.activeRoute = route;
+      this.refreshActiveRouteLogs();
+    });
+
+    this.routesService.routesChanged$.pipe(takeUntil(this.unsubscribe$)).subscribe(routes => (this.routes = routes));
+  }
+
+  changeLevel(name: string, level: Level): void {
+    if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
+      this.logsService
+        .changeInstanceLevel(this.searchByAppName(), name, level)
+        .pipe(takeUntil(this.unsubscribe$))
+        .subscribe(() => this.refreshActiveRouteLogs());
     }
+  }
 
-    ngOnInit() {
-        this.loggers = [];
-        this.subscription = this.routesService.routeChanged$.subscribe((route) => {
-            this.activeRoute = route;
-            this.displayActiveRouteLogs();
-        });
-    }
+  searchByAppName(): Route[] {
+    return this.routes!.filter(route => route.appName === this.activeRoute!.appName);
+  }
 
-    changeLevel(name: string, level: string) {
-        const log = new Log(name, level);
-        if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
-            this.logsService.changeInstanceLevel(this.activeRoute, log).subscribe(() => {
-                this.logsService.findInstanceAll(this.activeRoute).subscribe((response) => (this.loggers = response.body));
-            });
-        }
+  refreshActiveRouteLogs(): void {
+    if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
+      this.logsService
+        .findInstanceAll(this.activeRoute)
+        .pipe(takeUntil(this.unsubscribe$))
+        .subscribe(
+          (response: LoggersResponse) =>
+            (this.loggers = Object.entries(response.loggers).map(
+              (logger: [string, Logger]) => new Log(logger[0], logger[1].effectiveLevel)
+            )),
+          error => {
+            if (error.status === 500 || error.status === 503 || error.status === 404) {
+              this.routesService.routeDown(this.activeRoute);
+            }
+          }
+        );
+    } else {
+      this.routesService.routeDown(this.activeRoute);
     }
+  }
 
-    displayActiveRouteLogs() {
-        this.updatingLogs = true;
-        if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
-            this.logsService.findInstanceAll(this.activeRoute).subscribe(
-                (response) => {
-                    this.loggers = response.body;
-                    this.updatingLogs = false;
-                },
-                (error) => {
-                    if (error.status === 503 || error.status === 500 || error.status === 404) {
-                        this.updatingLogs = false;
-                        if (error.status === 500 || error.status === 404) {
-                            this.routesService.routeDown(this.activeRoute);
-                        }
-                    }
-                }
-            );
-        } else {
-            this.routesService.routeDown(this.activeRoute);
-        }
-    }
-
-    ngOnDestroy() {
-        // prevent memory leak when component destroyed
-        this.subscription.unsubscribe();
-    }
+  ngOnDestroy(): void {
+    // prevent memory leak when component destroyed
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
 }

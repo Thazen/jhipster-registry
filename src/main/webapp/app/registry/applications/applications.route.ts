@@ -1,11 +1,11 @@
 import { Route } from '@angular/router';
 
-import { JhiApplicationsComponent } from './applications.component';
+import { ApplicationsComponent } from './applications.component';
 
 export const applicationsRoute: Route = {
-    path: 'applications',
-    component: JhiApplicationsComponent,
-    data: {
-        pageTitle: 'Applications'
-    }
+  path: '',
+  component: ApplicationsComponent,
+  data: {
+    pageTitle: 'Applications'
+  }
 };

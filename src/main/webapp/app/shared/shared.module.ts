@@ -1,48 +1,33 @@
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { CookieService } from 'ngx-cookie';
-
-import {
-    JHipsterRegistrySharedLibsModule,
-    JHipsterRegistrySharedCommonModule,
-    CSRFService,
-    AuthServerProvider,
-    AuthSessionServerProvider,
-    AccountService,
-    UserService,
-    StateStorageService,
-    LoginService,
-    LoginModalService,
-    LoginOAuth2Service,
-    Principal,
-    HasAnyAuthorityDirective,
-    JhiLoginModalComponent,
-    JhiRoutesService,
-    JhiRefreshService
-} from './';
+import { NgModule } from '@angular/core';
+import { JHipsterRegistrySharedLibsModule } from './shared-libs.module';
+import { AlertComponent } from './alert/alert.component';
+import { AlertErrorComponent } from './alert/alert-error.component';
+import { LoginModalComponent } from './login/login.component';
+import { HasAnyAuthorityDirective } from './auth/has-any-authority.directive';
+import { RouteSelectorComponent } from 'app/shared/routes/route-selector.component';
+import { RefreshSelectorComponent } from 'app/shared/refresh/refresh-selector.component';
+import { GroupByPipe } from 'app/shared/pipe/group-by.pipe';
 
 @NgModule({
-    imports: [JHipsterRegistrySharedLibsModule, JHipsterRegistrySharedCommonModule],
-    declarations: [JhiLoginModalComponent, HasAnyAuthorityDirective],
-    providers: [
-        JhiRoutesService,
-        JhiRefreshService,
-        AuthServerProvider,
-        AuthSessionServerProvider,
-        CookieService,
-        LoginService,
-        LoginModalService,
-        LoginOAuth2Service,
-        AccountService,
-        StateStorageService,
-        Principal,
-        CSRFService,
-        AuthServerProvider,
-        UserService,
-        DatePipe
-    ],
-    entryComponents: [JhiLoginModalComponent],
-    exports: [JHipsterRegistrySharedCommonModule, JhiLoginModalComponent, HasAnyAuthorityDirective, DatePipe],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  imports: [JHipsterRegistrySharedLibsModule],
+  declarations: [
+    AlertComponent,
+    AlertErrorComponent,
+    LoginModalComponent,
+    HasAnyAuthorityDirective,
+    RouteSelectorComponent,
+    RefreshSelectorComponent,
+    GroupByPipe
+  ],
+  entryComponents: [LoginModalComponent],
+  exports: [
+    JHipsterRegistrySharedLibsModule,
+    AlertComponent,
+    AlertErrorComponent,
+    LoginModalComponent,
+    HasAnyAuthorityDirective,
+    RouteSelectorComponent,
+    RefreshSelectorComponent
+  ]
 })
 export class JHipsterRegistrySharedModule {}

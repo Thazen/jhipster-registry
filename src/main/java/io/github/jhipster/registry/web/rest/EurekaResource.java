@@ -1,9 +1,9 @@
 package io.github.jhipster.registry.web.rest;
 
-import com.codahale.metrics.annotation.Timed;
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.discovery.shared.Application;
+import com.netflix.discovery.shared.Pair;
 import com.netflix.eureka.EurekaServerContext;
 import com.netflix.eureka.EurekaServerContextHolder;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.toMap;
+
 /**
  * Controller for viewing Eureka data.
  */
@@ -41,7 +43,6 @@ public class EurekaResource {
      * GET  /eureka/applications : get Eureka applications information
      */
     @GetMapping("/eureka/applications")
-    @Timed
     public ResponseEntity<EurekaVM> eureka() {
         EurekaVM eurekaVM = new EurekaVM();
         eurekaVM.setApplications(getApplications());
@@ -75,23 +76,14 @@ public class EurekaResource {
      * GET  /eureka/lastn : get Eureka registrations
      */
     @GetMapping("/eureka/lastn")
-    @Timed
     public ResponseEntity<Map<String, Map<Long, String>>> lastn() {
         Map<String, Map<Long, String>> lastn = new HashMap<>();
         PeerAwareInstanceRegistryImpl registry = (PeerAwareInstanceRegistryImpl) getRegistry();
-        Map<Long, String> canceledMap = new HashMap<>();
-        registry.getLastNCanceledInstances().forEach(
-            canceledInstance -> {
-                canceledMap.put(canceledInstance.first(), canceledInstance.second());
-            }
-        );
+        Map<Long, String> canceledMap = registry.getLastNCanceledInstances()
+            .stream().collect(toMap(Pair::first, Pair::second));
         lastn.put("canceled", canceledMap);
-        Map<Long, String> registeredMap = new HashMap<>();
-        registry.getLastNRegisteredInstances().forEach(
-            registeredInstance -> {
-                registeredMap.put(registeredInstance.first(), registeredInstance.second());
-            }
-        );
+        Map<Long, String> registeredMap = registry.getLastNRegisteredInstances()
+            .stream().collect(toMap(Pair::first, Pair::second));
         lastn.put("registered", registeredMap);
         return new ResponseEntity<>(lastn, HttpStatus.OK);
     }
@@ -100,7 +92,6 @@ public class EurekaResource {
      * GET  /eureka/replicas : get Eureka replicas
      */
     @GetMapping("/eureka/replicas")
-    @Timed
     public ResponseEntity<List<String>> replicas() {
         List<String> replicas = new ArrayList<>();
         getServerContext().getPeerEurekaNodes().getPeerNodesView().forEach(
@@ -122,7 +113,6 @@ public class EurekaResource {
      * GET  /eureka/status : get Eureka status
      */
     @GetMapping("/eureka/status")
-    @Timed
     public ResponseEntity<EurekaVM> eurekaStatus() {
 
         EurekaVM eurekaVM = new EurekaVM();

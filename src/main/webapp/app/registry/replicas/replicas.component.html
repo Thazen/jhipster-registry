@@ -23,15 +23,18 @@
     <div class="text-center pad">
         <a (click)="showMore = !showMore" class="btn btn-default">
             <span *ngIf="showMore">
-                <span class="fa fa-arrow-circle-down"></span>&nbsp;show more
+                <fa-icon icon="arrow-circle-down"></fa-icon>&nbsp;show more
             </span>
             <span *ngIf="!showMore">
-                <span class="fa fa-arrow-circle-up"></span>&nbsp;show less
+                <fa-icon icon="arrow-circle-up"></fa-icon>&nbsp;show less
             </span>
         </a>
     </div>
     <div [ngbCollapse]="showMore">
-        <h3><span class="fa fa-info-circle"></span> Configuring replication</h3>
+        <h3>
+            <fa-icon icon="info-circle"></fa-icon>
+            Configuring replication
+        </h3>
         <p>
             Here is the Spring Cloud Netflix official documentation for configuring replication:
         </p>
@@ -96,7 +99,7 @@ eureka:
     instance:
         hostname: eureka-peer-1
     server:
-        enable-self-preservation: true
+        enable-self-preservation: false
         registry-sync-retry-wait-ms: 500
         a-sgcache-expiry-timeout-ms: 60000
         eviction-interval-timer-in-ms: 30000
@@ -117,7 +120,7 @@ eureka:
     instance:
         hostname: eureka-peer-2
     server:
-        enable-self-preservation: true
+        enable-self-preservation: false
         registry-sync-retry-wait-ms: 500
         a-sgcache-expiry-timeout-ms: 60000
         eviction-interval-timer-in-ms: 30000

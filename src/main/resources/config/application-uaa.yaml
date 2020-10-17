@@ -1,9 +1,0 @@
-jhipster:
-    security:
-        client-authorization:
-          client-id: internal
-          client-secret: internal
-
-eureka:
-    client:
-        fetch-registry: true

@@ -1,34 +1,40 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs/Observable';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
 
 import { SERVER_API_URL } from 'app/app.constants';
-import { Log } from './log.model';
-import { Route } from 'app/shared';
+import { Route } from 'app/shared/routes/route.model';
+import { Level, LoggersResponse } from 'app/admin/logs/log.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class LogsService {
-    constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {}
 
-    changeLevel(log: Log): Observable<HttpResponse<any>> {
-        return this.http.put(SERVER_API_URL + 'management/logs', log, { observe: 'response' });
+  changeLevel(name: string, configuredLevel: Level): Observable<{}> {
+    return this.http.post(SERVER_API_URL + 'management/loggers/' + name, { configuredLevel });
+  }
+
+  changeInstanceLevel(instances: Route[], name: string, configuredLevel: Level): Observable<{}> {
+    const changeInstanceLevelResponses: Observable<{}>[] = [];
+    for (let i = 0; i < instances.length; i++) {
+      if (instances[i] && instances[i].prefix && instances[i].prefix.length > 0) {
+        changeInstanceLevelResponses.push(this.http.post(instances[i].prefix + '/management/loggers/' + name, { configuredLevel }));
+      } else {
+        changeInstanceLevelResponses.push(this.changeLevel(name, configuredLevel));
+      }
     }
 
-    changeInstanceLevel(instance: Route, log: Log): Observable<HttpResponse<any>> {
-        if (instance && instance.prefix && instance.prefix.length > 0) {
-            return this.http.put(instance.prefix + '/management/logs', log, { observe: 'response' });
-        }
-        return this.changeLevel(log);
-    }
+    return forkJoin(changeInstanceLevelResponses);
+  }
 
-    findAll(): Observable<HttpResponse<Log[]>> {
-        return this.http.get<Log[]>(SERVER_API_URL + 'management/logs', { observe: 'response' });
-    }
+  findAll(): Observable<LoggersResponse> {
+    return this.http.get<LoggersResponse>(SERVER_API_URL + 'management/loggers');
+  }
 
-    findInstanceAll(instance: Route): Observable<HttpResponse<Log[]>> {
-        if (instance && instance.prefix && instance.prefix.length > 0) {
-            return this.http.get<Log[]>(instance.prefix + '/management/logs', { observe: 'response' });
-        }
-        return this.findAll();
+  findInstanceAll(instance: Route | undefined): Observable<LoggersResponse> {
+    if (instance && instance.prefix && instance.prefix.length > 0) {
+      return this.http.get<LoggersResponse>(instance.prefix + '/management/loggers');
     }
+    return this.findAll();
+  }
 }

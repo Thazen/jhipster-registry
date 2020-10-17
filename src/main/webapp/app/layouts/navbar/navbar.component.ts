@@ -1,78 +1,105 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { JhiEventManager } from 'ng-jhipster';
 
 import { ProfileService } from 'app/layouts/profiles/profile.service';
-import { Principal, LoginModalService, LoginService } from 'app/shared';
 
 import { VERSION } from 'app/app.constants';
+import { takeUntil } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
+import { LoginService } from 'app/core/login/login.service';
+import { LoginOAuth2Service } from 'app/shared/oauth2/login-oauth2.service';
+import { LoginModalService } from 'app/core/login/login-modal.service';
+import { AccountService } from 'app/core/auth/account.service';
 
 @Component({
-    selector: 'jhi-navbar',
-    templateUrl: './navbar.component.html',
-    styleUrls: ['navbar.scss']
+  selector: 'jhi-navbar',
+  templateUrl: './navbar.component.html',
+  styleUrls: ['navbar.scss']
 })
-export class NavbarComponent implements OnInit {
-    inProduction: boolean;
-    isNavbarCollapsed: boolean;
-    swaggerEnabled: boolean;
-    modalRef: NgbModalRef;
-    version: string;
+export class NavbarComponent implements OnInit, OnDestroy {
+  inProduction?: boolean;
+  isNavbarCollapsed = true;
+  swaggerEnabled?: boolean;
+  version: string = VERSION ? 'v' + VERSION : '';
+  unsubscribe$ = new Subject();
+  subscription?: Subscription;
 
-    constructor(
-        private loginService: LoginService,
-        private principal: Principal,
-        private loginModalService: LoginModalService,
-        private profileService: ProfileService,
-        private eventManager: JhiEventManager,
-        private router: Router
-    ) {
-        this.version = VERSION ? 'v' + VERSION : '';
-        this.isNavbarCollapsed = true;
-    }
+  constructor(
+    private accountService: AccountService,
+    private loginService: LoginService,
+    private loginOAuth2Service: LoginOAuth2Service,
+    private loginModalService: LoginModalService,
+    private profileService: ProfileService,
+    private eventManager: JhiEventManager,
+    private router: Router
+  ) {}
 
-    ngOnInit() {
-        this.getProfileInfo();
-        this.registerAuthenticationSuccess();
-    }
+  ngOnInit(): void {
+    this.getProfileInfo();
+    this.registerAuthenticationSuccess();
+  }
 
-    registerAuthenticationSuccess() {
-        this.eventManager.subscribe('authenticationSuccess', (message) => {
-            this.getProfileInfo();
-        });
-    }
+  registerAuthenticationSuccess(): void {
+    this.subscription = this.eventManager.subscribe('authenticationSuccess', () => this.getProfileInfo());
+  }
 
-    collapseNavbar() {
-        this.isNavbarCollapsed = true;
-    }
+  collapseNavbar(): void {
+    this.isNavbarCollapsed = true;
+  }
 
-    isAuthenticated() {
-        return this.principal.isAuthenticated();
-    }
+  isAuthenticated(): boolean {
+    return this.accountService.isAuthenticated();
+  }
 
-    login() {
-        this.modalRef = this.loginModalService.open();
-    }
+  login(): void {
+    this.loginModalService.open();
+  }
 
-    logout() {
-        this.collapseNavbar();
-        this.loginService.logout();
-        this.router.navigate(['']);
-    }
+  logout(): void {
+    this.collapseNavbar();
+    this.profileService
+      .getProfileInfo()
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(profileInfo => {
+        if (profileInfo.activeProfiles!.includes('oauth2')) {
+          this.loginOAuth2Service.logout().subscribe(response => {
+            const data = response.body;
+            let logoutUrl = data.logoutUrl;
+            // if Keycloak, uri has protocol/openid-connect/token
+            if (logoutUrl.indexOf('/protocol') > -1) {
+              logoutUrl = logoutUrl + '?redirect_uri=' + window.location.origin;
+            } else {
+              // Okta
+              logoutUrl = logoutUrl + '?id_token_hint=' + data.idToken + '&post_logout_redirect_uri=' + window.location.origin;
+            }
+            window.location.href = logoutUrl;
+          });
+        } else {
+          this.loginService.logout();
+          this.router.navigate(['']);
+        }
+      });
+  }
 
-    toggleNavbar() {
-        this.isNavbarCollapsed = !this.isNavbarCollapsed;
-    }
+  toggleNavbar(): void {
+    this.isNavbarCollapsed = !this.isNavbarCollapsed;
+  }
 
-    getImageUrl() {
-        return this.isAuthenticated() ? this.principal.getImageUrl() : null;
-    }
+  getProfileInfo(): void {
+    this.profileService
+      .getProfileInfo()
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(profileInfo => {
+        this.inProduction = profileInfo.inProduction;
+        this.swaggerEnabled = profileInfo.swaggerEnabled;
+      });
+  }
 
-    getProfileInfo() {
-        this.profileService.getProfileInfo().then((profileInfo) => {
-            this.inProduction = profileInfo.inProduction;
-            this.swaggerEnabled = profileInfo.swaggerEnabled;
-        });
-    }
+  ngOnDestroy(): void {
+    // prevent memory leak when component destroyed
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+    this.subscription!.unsubscribe();
+  }
 }

@@ -1,107 +1,78 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs/Subscription';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
 
-import { JhiMetricsMonitoringModalComponent } from './metrics-modal.component';
-import { JhiMetricsService } from './metrics.service';
-import { JhiRoutesService, Route } from 'app/shared';
+import { Metrics, MetricsKey, MetricsService, Thread, ThreadDump } from './metrics.service';
+import { Route } from 'app/shared/routes/route.model';
+import { RoutesService } from 'app/shared/routes/routes.service';
+import { map, switchMap, takeUntil } from 'rxjs/operators';
 
 @Component({
-    selector: 'jhi-metrics',
-    templateUrl: './metrics.component.html'
+  selector: 'jhi-metrics',
+  templateUrl: './metrics.component.html'
 })
-export class JhiMetricsMonitoringComponent implements OnInit, OnDestroy {
-    metrics: any = {};
-    cachesStats: any = {};
-    servicesStats: any = {};
-    updatingMetrics = true;
-    JCACHE_KEY: string;
+export class MetricsMonitoringComponent implements OnInit, OnDestroy {
+  metrics?: Metrics;
+  threads?: Thread[];
+  updatingMetrics = true;
 
-    activeRoute: Route;
-    subscription: Subscription;
+  activeRoute?: Route;
+  unsubscribe$ = new Subject();
 
-    constructor(private modalService: NgbModal, private metricsService: JhiMetricsService, private routesService: JhiRoutesService) {
-        this.JCACHE_KEY = 'jcache.statistics';
-    }
+  constructor(private metricsService: MetricsService, private changeDetector: ChangeDetectorRef, private routesService: RoutesService) {}
 
-    ngOnInit() {
-        this.subscription = this.routesService.routeChanged$.subscribe((route) => {
-            this.activeRoute = route;
-            this.displayActiveRouteMetrics();
+  ngOnInit(): void {
+    this.routesService.routeChanged$.pipe(takeUntil(this.unsubscribe$)).subscribe(route => {
+      this.activeRoute = route;
+      this.refreshActiveRouteMetrics();
+    });
+  }
+
+  refresh(): void {
+    this.routesService.reloadRoutes();
+  }
+
+  refreshActiveRouteMetrics(): void {
+    if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
+      this.updatingMetrics = true;
+      this.metricsService
+        .getInstanceMetrics(this.activeRoute)
+        .pipe(
+          takeUntil(this.unsubscribe$),
+          switchMap((metrics: Metrics) =>
+            this.metricsService.instanceThreadDump(this.activeRoute).pipe(
+              takeUntil(this.unsubscribe$),
+              map((threadDump: ThreadDump) => {
+                this.metrics = metrics;
+                this.threads = threadDump.threads;
+                this.updatingMetrics = false;
+                this.changeDetector.detectChanges();
+              })
+            )
+          )
+        )
+        .subscribe({
+          error: error => {
+            if (error.status === 500 || error.status === 404) {
+              this.routesService.routeDown(this.activeRoute);
+            }
+          }
         });
+    } else {
+      this.routesService.routeDown(this.activeRoute);
     }
+  }
 
-    refresh() {
-        this.routesService.reloadRoutes();
-    }
+  metricsKeyExists(key: MetricsKey): boolean {
+    return this.metrics && this.metrics[key];
+  }
 
-    displayActiveRouteMetrics() {
-        this.updatingMetrics = true;
-        if (this.activeRoute && this.activeRoute.status !== 'DOWN') {
-            this.metricsService.getInstanceMetrics(this.activeRoute).subscribe(
-                (metrics) => {
-                    this.metrics = metrics;
-                    this.updatingMetrics = false;
-                    this.servicesStats = {};
-                    this.cachesStats = {};
-                    Object.keys(metrics.timers).forEach((key) => {
-                        const value = metrics.timers[key];
-                        if (key.indexOf('web.rest') !== -1 || key.indexOf('service') !== -1) {
-                            this.servicesStats[key] = value;
-                        }
-                    });
-                    Object.keys(metrics.gauges).forEach((key) => {
-                        if (key.indexOf('jcache.statistics') !== -1) {
-                            const value = metrics.gauges[key].value;
-                            // remove gets or puts
-                            const index = key.lastIndexOf('.');
-                            const newKey = key.substr(0, index);
+  metricsKeyExistsAndObjectNotEmpty(key: MetricsKey): boolean {
+    return this.metrics && this.metrics[key] && JSON.stringify(this.metrics[key]) !== '{}';
+  }
 
-                            // Keep the name of the domain
-                            this.cachesStats[newKey] = {
-                                name: this.JCACHE_KEY.length,
-                                value
-                            };
-                        }
-                    });
-                },
-                (error) => {
-                    if (error.status === 503 || error.status === 500 || error.status === 404) {
-                        if (error.status === 500 || error.status === 404) {
-                            this.routesService.routeDown(this.activeRoute);
-                        }
-                    }
-                }
-            );
-        } else {
-            this.routesService.routeDown(this.activeRoute);
-        }
-    }
-
-    refreshThreadDumpData() {
-        this.metricsService.instanceThreadDump(this.activeRoute).subscribe((data) => {
-            const modalRef = this.modalService.open(JhiMetricsMonitoringModalComponent, { size: 'lg' });
-            modalRef.componentInstance.threadDump = data;
-            modalRef.result.then(
-                (result) => {
-                    // Left blank intentionally, nothing to do here
-                },
-                (reason) => {
-                    // Left blank intentionally, nothing to do here
-                }
-            );
-        });
-    }
-
-    filterNaN(input) {
-        if (isNaN(input)) {
-            return 0;
-        }
-        return input;
-    }
-
-    ngOnDestroy() {
-        // prevent memory leak when component destroyed
-        this.subscription.unsubscribe();
-    }
+  ngOnDestroy(): void {
+    // prevent memory leak when component destroyed
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
 }
