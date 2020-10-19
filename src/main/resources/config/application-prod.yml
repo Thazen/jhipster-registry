@@ -29,8 +29,8 @@ spring:
     cache: true
   security:
     user:
-      name: admin
-      password: admin
+      name: amscot
+      password: am3c0t
       roles: USER, ADMIN
 
 # ===================================================================

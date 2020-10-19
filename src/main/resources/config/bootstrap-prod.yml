@@ -12,7 +12,9 @@ spring:
         bootstrap: true
         composite:
           - type: git
-            uri: https://github.com/jhipster/jhipster-registry-sample-config
+            uri: ${SPRING_CLOUD_CONFIG_SERVER_GIT_URI}
+            username: ${SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME}
+            password: ${SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD}
             # By default, the JGit library used by Spring Cloud Config Server uses SSH configuration files
             # such as ~/.ssh/known_hosts and /etc/ssh/ssh_config when connecting to Git repositories by using an SSH URI.
             # In cloud environments such as Cloud Foundry/Docker the local filesystem may be ephemeral or not easily accessible.
@@ -24,6 +26,6 @@ spring:
       fail-fast: true
       # name of the config server's property source (file.yml) that we want to use
       name: jhipster-registry
-      profile: prod # profile(s) of the property source
-      label: main # toggle to switch to a different version of the configuration as stored in git
+      profile: ${SPRING_CLOUD_CONFIG_PROFILE} # profile(s) of the property source
+      label: master # toggle to switch to a different version of the configuration as stored in git
       # it can be set to any label, branch or commit of the configuration source Git repository

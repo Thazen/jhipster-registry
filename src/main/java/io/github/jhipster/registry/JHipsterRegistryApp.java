@@ -4,6 +4,7 @@ import io.github.jhipster.registry.config.ApplicationProperties;
 
 import io.github.jhipster.config.DefaultProfileUtil;
 import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.registry.config.AwsEcsEurikaSupport;
 
 import io.github.jhipster.registry.config.ConfigServerConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -67,6 +68,7 @@ public class JHipsterRegistryApp {
      */
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(JHipsterRegistryApp.class);
+        app.addListeners(new AwsEcsEurikaSupport());
         DefaultProfileUtil.addDefaultProfile(app);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);

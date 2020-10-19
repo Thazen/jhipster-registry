@@ -47,8 +47,10 @@ spring:
       console-available: true
 
 logging:
-  file:
-    name: target/jhipster-registry.log
+  pattern:
+    console: '%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} [%method]: %msg%n'
+    file: '%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} [%method]: %msg%n'
+  name: target/jhipster-registry.log
 
 ribbon:
   eureka:
@@ -127,8 +129,8 @@ info:
 
 eureka:
   instance:
-    appname: jhipster-registry
-    instanceId: jhipsterRegistry:${spring.application.instance-id:${random.value}}
+    appname: amscot-registry
+    instanceId: amscot-registry:${eureka.instance.ip-address:${random.value}}
     prefer-ip-address: true
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 10
